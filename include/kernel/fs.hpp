@@ -1,5 +1,5 @@
-#ifndef _OYSTER_FS_TTY_H
-#define _OYSTER_FS_TTY_H
+#ifndef _OYSTER_FS_H
+#define _OYSTER_FS_H
 
 #include <stdbool.h>
 #include <stddef.h>

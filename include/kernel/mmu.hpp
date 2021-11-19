@@ -41,6 +41,11 @@ struct SegmentDescriptor {
     unsigned int base_31_24 : 8;   // high bits of sement base address.
 };
 
+// system segment type bits
+#define STS_T32A 0x9 // avilable 32 bit TSS
+#define STS_IG32 0xE // 32 bit interrupt gate
+#define STS_TG32 0xF // 32 bit trap gate
+
 // task state segment format.
 struct TaskState {
     uint32_t link;
@@ -103,12 +108,24 @@ struct GateDescriptor {
     uint32_t off_15_0 : 16;     // low 16 bit of offset in segment
     uint32_t code_segment : 16; // code segment selector
     uint32_t args : 5;          // # args. 0 for interrupt / trap gates.
-    uint32_t reserved : 13;
+    uint32_t reserved : 3;
     uint32_t type : 4;            // STS_{IT32, TG32}
     uint32_t s : 1;               // must be 0 (system).
     uint32_t privilege_level : 2; // descriptor privilege_level
+    uint32_t present : 1;         // descriptor privilege_level
     uint32_t off_31_16 : 16;      // high bits of offset in segment
 
+    void setup(bool istrap, auto sel, auto off, auto d) {
+        this->off_15_0 = (uint32_t)(off)&0xffff;
+        this->code_segment = sel;
+        this->args = 0;
+        this->reserved = 0;
+        this->type = istrap ? STS_TG32 : STS_IG32;
+        this->s = 0;
+        this->privilege_level = d;
+        this->present = 1;
+        this->off_31_16 = (uint32_t)(off) >> 16;
+    }
 };
 
 // TODO

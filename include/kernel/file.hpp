@@ -11,6 +11,17 @@ struct File {
     bool readable;
     bool writable;
 
+    // TODO
+
+    File();
+    ~File();
+
+    File *allocate();
+    void close();
+    void init();
+    int read(char *, int n);
+    // int stat(File*, Stat*); TODO
+    int write(char *, int n);
 };
 
 #endif

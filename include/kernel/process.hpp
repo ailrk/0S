@@ -41,6 +41,7 @@ enum ProcessState {
 struct Process {
     uint32_t memory_size;
     pageTable *pgdir;
+    // TODO
 
 
 };
