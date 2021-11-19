@@ -67,5 +67,12 @@ external/*
 
 .ccls-cache/
 build/
+
+
+### OS ###
+*.iso
+isodir
+sysroot
+
 # End of https://www.toptal.com/developers/gitignore/api/cmake
 #
