@@ -50,8 +50,8 @@ struct SegmentDescriptor {
 struct TaskState {
     uint32_t link;
     uint32_t esp0; // sp and segment selectors
-    uint16_t ss0;  // after an increase in privilege level.
 
+    uint16_t ss0; // after an increase in privilege level.
     uint16_t padding0_;
 
     uint32_t *esp1;
@@ -102,7 +102,7 @@ struct TaskState {
 
     uint16_t padding10_;
     uint16_t io_map_baseaddr;
-};
+} __attribute__((packed));
 
 struct GateDescriptor {
     uint32_t off_15_0 : 16;     // low 16 bit of offset in segment
