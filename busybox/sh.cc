@@ -28,6 +28,13 @@ struct ExecCMD : CMD {
     ExecCMD()
         : CMD(EXEC) {}
 
+    static CMD *create() {
+        CMD *cmd = malloc(sizeof(CMD));
+        memset(cmd, 0, sizeof(CMD));
+        cmd->type = EXEC;
+        return (CMD *)cmd;
+    }
+
     void run() {
         if (argv[0] == 0)
             exit();
@@ -143,9 +150,7 @@ int get_cmd(char *buf, int nbuf) {
     return 0;
 }
 
-
 int cd(char *dirname) {
-    buf[strlen(buf) - 1] = 0; // remove '\n'
     if (chdir(buf) < 0)
         printf(2, "cannot cd %s\n", buf);
 }
@@ -154,14 +159,14 @@ int main(int argc, char *argv[]) {
     static char buf[100];
     int fd;
 
-    while ((fd = open("console", O_RDWR)) >= 0) {  // open 3 fds.
+    while ((fd = open("console", O_RDWR)) >= 0) { // open 3 fds.
         if (fd >= 3) {
             close(fd);
             break;
         }
     }
 
-    while (get_cmd(buf, sizeof(buf)) >= 0) {    // repl.
+    while (get_cmd(buf, sizeof(buf)) >= 0) { // repl.
         // cd needs to built in because it modiyf the same thread.
         if (buf[0] == 'c' && buf[1] == 'd' && buf[2] == ' ') {
             buf[strlen(buf) - 1] = '\0';
