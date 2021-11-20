@@ -1,7 +1,6 @@
-// memory management unit.
-
 #ifndef _OYSTER_MEMLAYOUT_H
 #define _OYSTER_MEMLAYOUT_H
+// memory management unit.
 
 #include "utils.h"
 #include <stdint.h>
@@ -105,9 +104,9 @@ struct TaskState {
 } __attribute__((packed));
 
 struct GateDescriptor {
-    uint32_t off_15_0 : 16;     // low 16 bit of offset in segment
-    uint32_t code_segment : 16; // code segment selector
-    uint32_t args : 5;          // # args. 0 for interrupt / trap gates.
+    uint32_t off_15_0 : 16; // low 16 bit of offset in segment
+    uint32_t cs : 16;       // code segment selector
+    uint32_t args : 5;      // # args. 0 for interrupt / trap gates.
     uint32_t reserved : 3;
     uint32_t type : 4;            // STS_{IT32, TG32}
     uint32_t s : 1;               // must be 0 (system).
@@ -117,7 +116,7 @@ struct GateDescriptor {
 
     void setup(bool istrap, auto sel, auto off, auto d) {
         this->off_15_0 = (uint32_t)(off)&0xffff;
-        this->code_segment = sel;
+        this->cs = sel;
         this->args = 0;
         this->reserved = 0;
         this->type = istrap ? STS_TG32 : STS_IG32;

@@ -7,6 +7,7 @@
 #include <stddef.h>
 #include <stdint.h>
 
-template <typename T> struct Allocator {};
+template <typename T> struct Allocator {
+};
 
 #endif

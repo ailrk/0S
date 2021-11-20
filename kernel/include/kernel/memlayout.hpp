@@ -1,7 +1,7 @@
 #ifndef _OYSTER_MEMLAYOUT_H
 #define _OYSTER_MEMLAYOUT_H
 
-#include "utils.h"
+#include "utils.hpp"
 #include <stdint.h>
 
 #define EXTERM 0x10000000   // start of extended memory

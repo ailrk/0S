@@ -10,9 +10,18 @@ SpinLock::SpinLock(char *name)
 SpinLock::SpinLock()
     : SpinLock::SpinLock(nullptr) {}
 
-SpinLock::~SpinLock() {}
+SpinLock::~SpinLock() {
+    locked = true;
+    cpu = nullptr;
+}
 
-void SpinLock::acquire() {}
+void SpinLock::acquire() {
+    withcli([this]() {
+        if (is_holding()) {
+        } else {
+        }
+    });
+}
 
 void SpinLock::release() {}
 
