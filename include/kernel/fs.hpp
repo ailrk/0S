@@ -38,7 +38,7 @@ struct DInode {
     uint16_t nlink;              // # of links to inode in fs
     uint32_t size;               // size of file in bytes
     uint32_t addrs[NDIRECT + 1]; // data block addresses
-};
+} __pack;
 
 MACFN inode_per_block() { return BLOCKSZ / sizeof(DInode); }
 MACFN block_with_incode(auto i, SuperBlock sb) {

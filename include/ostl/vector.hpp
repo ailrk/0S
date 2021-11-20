@@ -1,5 +1,5 @@
-#ifndef _OYSTER_QUEUE_H
-#define _OYSTER_QUEUE_H
+#ifndef _OYSTER_VECTOR_H
+#define _OYSTER_VECTOR_H
 
 // a collection of template queue.
 
@@ -8,7 +8,7 @@
 #include <stdint.h>
 
 // valina queue
-template <typename T, typename Alloc> struct Queue {
+template <typename T> struct Vector {
 };
 
 #endif

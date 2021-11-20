@@ -1,5 +1,5 @@
-#ifndef _OYSTER_QUEUE_H
-#define _OYSTER_QUEUE_H
+#ifndef _OSTL_QUEUE_H
+#define _OSTL_QUEUE_H
 
 // a collection of template queue.
 
