@@ -1,11 +1,10 @@
 #ifndef _OYSTER_FS_H
 #define _OYSTER_FS_H
 
+#include "utils.hpp"
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
-#include "utils.hpp"
-
 
 // file system format.
 
@@ -54,7 +53,7 @@ MACFN block_with_bit(auto b, SuperBlock sb) {
 
 struct Dirent {
     uint16_t inum;
-    char name [DIRSIZE];
+    char name[DIRSIZE];
 };
 
 #endif

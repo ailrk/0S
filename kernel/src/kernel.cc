@@ -1,4 +1,4 @@
-#include "../kernel/tty.hpp"
+#include "../include/kernel/tty.hpp"
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>

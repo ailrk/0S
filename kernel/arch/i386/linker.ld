@@ -28,4 +28,8 @@ SECTIONS
         *(COMMON)
         *(.bss)
     }
+
+    /* the end of the kernel */
+    PROVIDE(end = .)
+
 }
