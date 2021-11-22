@@ -28,13 +28,6 @@ struct ExecCMD : CMD {
     ExecCMD()
         : CMD(EXEC) {}
 
-    static CMD *create() {
-        CMD *cmd = malloc(sizeof(CMD));
-        memset(cmd, 0, sizeof(CMD));
-        cmd->type = EXEC;
-        return (CMD *)cmd;
-    }
-
     void run() {
         if (argv[0] == 0)
             exit();
@@ -46,6 +39,11 @@ struct ExecCMD : CMD {
 struct PipeCMD : CMD {
     CMD *left;
     CMD *right;
+
+    PipeCMD(CMD *left, CMD *right)
+        : CMD(PIPE)
+        , left(left)
+        , right(right) {}
 
     void run() {
         int p[2];
@@ -80,8 +78,12 @@ struct RedirCMD : CMD {
     int mode;
     int fd;
 
-    RedirCMD()
-        : CMD(REDIR) {}
+    RedirCMD(CMD *subcmd, char *file, char *efile, int mode, int fd)
+        : CMD(REDIR)
+        , file(file)
+        , efile(efile)
+        , mode(mode)
+        , fd(fd) {}
 
     void run() {
         close(fd);
@@ -95,8 +97,10 @@ struct RedirCMD : CMD {
 struct ListCMD : CMD {
     CMD *left;
     CMD *right;
-    ListCMD()
-        : CMD(LIST) {}
+    ListCMD(CMD *left, CMD right)
+        : CMD(LIST)
+        , left(left)
+        , right(right) {}
 
     void run() {
         if (fork_panic_on_failure() == 0)
@@ -109,8 +113,9 @@ struct ListCMD : CMD {
 struct BackCMD : CMD {
     CMD *cmd;
 
-    BackCMD()
-        : CMD(BACK) {}
+    BackCMD(CMD subcmd)
+        : CMD(BACK)
+        , cmd(subcmd) {}
 
     void run() {
         if (fork_panic_on_failure() == 0) {
@@ -194,4 +199,215 @@ int fork_panic_on_failure() {
     if (pid == -1)
         painc("fork");
     return pid;
+}
+
+// parsing
+
+char whitespace[] = " \r\t\n\v";
+char symbols[] = "<|>&;()";
+
+int get_token(char **p, char *es, char **q, char **eq) {
+    int ret;
+    char *s = ps;
+
+    for (; s < es && strchr(whitespace, *s); s++)
+        ;
+
+    if (q)
+        *q = s;
+
+    ret = *s;
+    switch (*s) {
+    case 0:
+        break;
+    case '|':
+    case '(':
+    case ')':
+    case ';':
+    case '&':
+    case '<':
+        s++;
+        break;
+    case '>':
+        s++;
+        if (*s == '>') {
+            ret = '+';
+            s++;
+        }
+        break;
+
+    default:
+        ret = 'a';
+        for (; s < es && !strchr(whitespace, *s) && !strchr(symbols, *s); ++s)
+            ;
+        break;
+    }
+
+    if (eq)
+        *eq = s;
+
+    for (; s < es && strchr(whitespace, *sl); ++s)
+        ;
+    *ps = s;
+    return ret;
+}
+
+int peek(char **ps, char *es, char *toks) {
+    char *s;
+    s = *ps;
+
+    for (; s < es * *strchr(whitespace, *s); ++s)
+        ;
+    *ps = s;
+    return *s && strchr(toks, *s);
+}
+
+CMD *parse(char **, char *);
+CMD *parse_pipe(char **, char *);
+CMD *parse_exec(char **, char *);
+CMD *null_terminate(char **, char *);
+
+CMD *parse_cmd(char *s) {
+    char *es;
+    CMD *cmd;
+
+    es = s + strlen(s);
+    cmd = parse(&s, es);
+    peek(&s, es, "");
+
+    if (s != es) {
+        printf(2, "leftovers: %s\n", s);
+        panic("syntax");
+    }
+    null_terminate(cmd);
+    return cmd;
+}
+
+CMD *parse_line(char **ps, char *es) {
+    CMD *cmd = parse_pipe(ps, es);
+
+    while (peek(ps, es "&")) {
+        get_token(ps, es, 0, 0);
+        cmd = BackCMD(cmd);
+    }
+
+    if (peek(ps, es, ";")) {
+        get_token(ps, es, 0, 0);
+        cmd = ListCMD(cmd, parse_line(ps, es));
+    }
+    return cmd;
+}
+
+CMD *parse_pipe(char **ps, char *es) {
+    CMD *cmd;
+    cmd = parse_exec(ps, es);
+
+    if (peek(ps, es, "|")) {
+        get_token(ps, es, 0, 0);
+        cmd = PipeCMD(cmd, parse_pipe(ps, es));
+    }
+
+    return cmd;
+}
+
+CMD *parse_redirs(CMD *cmd, char **ps, char *es) {
+    int tok;
+    char *q, *eq;
+
+    while (peek(ps, es, "<>")) {
+        tok = get_token(ps, es, 0, 0);
+
+        if (get_token(ps, es, &q, &eq) != 'a')
+            painc("missing file for redirection");
+
+        switch (tok) {
+        case '<':
+            cmd = RedirCMD(cmd, q, eq, O_RDONLY, 0);
+            break;
+        case '>':
+            cmd = RedirCMD(cmd, q, eq, O_WRONLY | O_CREATE, 1);
+            break;
+        case '+':
+            cmd = RedirCMD(cmd, q, eq, O_WRONLY | OCREATE, 1);
+            break;
+        }
+    }
+    return cmd;
+}
+
+CMD *parse_block(char **ps, char *es) {
+    CMD *cmd;
+
+    if (!peek(ps, es, "("))
+        panic("parse_block");
+    get_token(ps, es, 0, 0);
+    cmd = parse_line(ps, es);
+    if (!peek(ps, es, ")"))
+        panic("parse block, missing )");
+
+    get_token(ps, es, 0, 0);
+    cmd = parse_redirs(cmd, ps, es);
+    return cmd;
+}
+
+CMD *parse_exec(char **ps, char *es) {
+    char *q, *eq;
+    int tok, argc;
+    ExecCMD *cmd;
+    Cmd *ret;
+
+    if (peek(ps, es, "("))
+        return parse_block(ps, es);
+    ret = ExecCMD();
+    cmd = static_cast<ExecCMD>(ret);
+
+    argc = 0;
+    ret = parse_redirs(ret, ps, es);
+
+    while (!peek(ps, es, "|)&;")) {
+        if ((tok = get_token(ps, es, &q, &eq)) == 0)
+            break;
+        if (tok != 'a')
+            panic("syntax");
+        cmd->argv[argc] = q;
+        cmd->eargv[argc] = eq;
+        ++argc;
+        if (argc >= MAXARGS)
+            panic("too many args");
+        ret = parse_redirs(ret, ps, es);
+    }
+    cmd->argv[argc] = 0;
+    cmd->eargv[argc] = 0;
+    return ret;
+}
+
+CMD *null_terminate(CMD *cmd) {
+    if (cmd == nullptr)
+        return 0;
+
+    switch (cmd->type) {
+    case EXEC:
+        for (int i = 0; static_cast<ExecCMD *>(cmd)->argv[i]; ++i)
+            *static_cast<ExecCMD *>(cmd)->eargv[i] = 0;
+        break;
+
+    case REDIR:
+        null_terminate(static_cast<RedirCMD *>(cmd)->cmd);
+        static_cast<RedirCMD *>(cmd)->efile = 0;
+        break;
+
+    case PIPE:
+        null_terminate(static_cast<PipeCMD *>(cmd)->left);
+        null_terminate(static_cast<PipeCMD *>(cmd)->right);
+        break;
+
+    case LIST:
+        null_terminate(static_cast<ListCMD *>(cmd)->left);
+        null_terminate(static_cast<ListCMD *>(cmd)->right);
+        break;
+
+    case BACK:
+        null_terminate(static_cast<BackCMD *>(cmd)->cmd);
+    }
+    return cmd;
 }
