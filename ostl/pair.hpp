@@ -1,6 +1,4 @@
-#ifndef _OSTL_PAIR_H
-#define _OSTL_PAIR_H
-
+#pragma once
 // a pair type.
 
 #include "utility.hpp"

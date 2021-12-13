@@ -6,7 +6,7 @@
 ;;  6. setup paging
 ;;  7. setup C stack
 ;;  8. setup interrupt
-;;  9. call kmain
+;;  9. kmain
 
 
 section .boot
@@ -135,7 +135,7 @@ output_loop:
     cmp al, 0                       ; if it's null
     je output_end                   ; protect
     or eax, 0x0100                  ; set bit 0x0100
-    mov word [ebx], ax              ;
+    mov word [ebx], ax
     add ebx, 2
     jmp output_loop
 output_end:
@@ -155,10 +155,10 @@ halt:
     mov esp, kernel_stack_top
     extern kmain
     call kmain
-    cli
+    cli                             ; clear interrupt.
     hlt
 
-times 1024 - ($-$$) db 0           ; pad til 510 bytes
+times 1024 - ($-$$) db 0            ; pad til 510 bytes.
 
 section .bss
 align 4
@@ -167,5 +167,5 @@ align 4
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; c++ starts here.
 kernel_stack_bottom: equ $
-        resb 16384                 ; 16kb
+        resb 16384                  ; 16kb
 kernel_stack_top:

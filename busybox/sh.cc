@@ -10,66 +10,29 @@ struct RedirCMD;
 struct ListCMD;
 struct BackCMD;
 
-int fork_panic_on_failure();
-void panic(char *);
-CMD *parseCMD(char *);
-
 struct CMD {
     int type;
     CMD(int n)
         : type(n) {}
-
     void run();
 };
 
 struct ExecCMD : CMD {
     char *argv[MAXARGS];
     char *eargv[MAXARGS];
-
     ExecCMD()
         : CMD(EXEC) {}
-
-    void run() {
-        if (argv[0] == 0)
-            exit();
-        exec(argv[0], argv);
-        printf(2, "exec %s failed\n", argv[0]);
-    }
+    void run();
 };
 
 struct PipeCMD : CMD {
     CMD *left;
     CMD *right;
-
     PipeCMD(CMD *left, CMD *right)
         : CMD(PIPE)
         , left(left)
         , right(right) {}
-
-    void run() {
-        int p[2];
-        if (pipe(p) < 0) {
-            painc("pipe");
-        }
-        if (fork_panic_on_failure() == 0) {
-            close(1);
-            dup(p[1]);
-            close(p[0]);
-            close(p[1]);
-            left->run();
-        }
-        if (fork_panic_on_failure() == 0) {
-            close(0);
-            dup(p[0]);
-            close(p[0]);
-            close(p[1]);
-            right.run();
-        }
-        close(p[0]);
-        close(p[1]);
-        wait();
-        wait();
-    }
+    void run();
 };
 
 struct RedirCMD : CMD {
@@ -85,45 +48,83 @@ struct RedirCMD : CMD {
         , efile(efile)
         , mode(mode)
         , fd(fd) {}
-
-    void run() {
-        close(fd);
-        if (open(file, mode) < 0) {
-            printf(2, "open %s failed\n", file);
-            exit();
-        }
-    }
+    void run();
 };
 
 struct ListCMD : CMD {
     CMD *left;
     CMD *right;
-    ListCMD(CMD *left, CMD right)
+    ListCMD(CMD *left, CMD *right)
         : CMD(LIST)
         , left(left)
         , right(right) {}
-
-    void run() {
-        if (fork_panic_on_failure() == 0)
-            left->run();
-        wait();
-        right->run();
-    }
+    void run();
 };
 
 struct BackCMD : CMD {
     CMD *cmd;
-
-    BackCMD(CMD subcmd)
+    BackCMD(CMD *subcmd)
         : CMD(BACK)
         , cmd(subcmd) {}
-
-    void run() {
-        if (fork_panic_on_failure() == 0) {
-            cmd->run();
-        }
-    }
+    void run();
 };
+
+int fork_panic_on_failure();
+void panic(char *);
+CMD *parseCMD(char *);
+
+void ExecCMD::run() {
+    if (argv[0] == 0)
+        exit();
+    exec(argv[0], argv);
+    printf(2, "exec %s failed\n", argv[0]);
+}
+
+void PipeCMD::run() {
+    int p[2];
+    if (pipe(p) < 0) {
+        painc("pipe");
+    }
+    if (fork_panic_on_failure() == 0) {
+        close(1);
+        dup(p[1]);
+        close(p[0]);
+        close(p[1]);
+        left->run();
+    }
+    if (fork_panic_on_failure() == 0) {
+        close(0);
+        dup(p[0]);
+        close(p[0]);
+        close(p[1]);
+        right.run();
+    }
+    close(p[0]);
+    close(p[1]);
+    wait();
+    wait();
+}
+
+void RedirCMD::run() {
+    close(fd);
+    if (open(file, mode) < 0) {
+        printf(2, "open %s failed\n", file);
+        exit();
+    }
+}
+
+void ListCMD::run() {
+    if (fork_panic_on_failure() == 0)
+        left->run();
+    wait();
+    right->run();
+}
+
+void BackCMD::run() {
+    if (fork_panic_on_failure() == 0) {
+        cmd->run();
+    }
+}
 
 void CMD::run() {
     switch (type) {
@@ -203,7 +204,10 @@ int fork_panic_on_failure() {
 }
 
 // parsing
-
+CMD *parse(char **, char *);
+CMD *parse_pipe(char **, char *);
+CMD *parse_exec(char **, char *);
+CMD *null_terminate(char **, char *);
 char whitespace[] = " \r\t\n\v";
 char symbols[] = "<|>&;()";
 
@@ -262,11 +266,6 @@ int peek(char **ps, char *es, char *toks) {
     *ps = s;
     return *s && strchr(toks, *s);
 }
-
-CMD *parse(char **, char *);
-CMD *parse_pipe(char **, char *);
-CMD *parse_exec(char **, char *);
-CMD *null_terminate(char **, char *);
 
 CMD *parse_cmd(char *s) {
     char *es;

@@ -1,6 +1,4 @@
-#ifndef _OSTL_TEMPLATE_H
-#define _OSTL_TEMPLATE_H
-
+#pragma once
 // a simple type trait
 
 #include <stddef.h>

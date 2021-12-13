@@ -1,2 +1,2 @@
 # ostl
-A simple stl like template library with instrusive containers [for](for) Oyster OS.
+A simple stl like template library with instrusive containers for AbaAba OS.
