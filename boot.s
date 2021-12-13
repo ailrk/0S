@@ -1,3 +1,13 @@
+;; general sequence:
+;;  1. enter real mode
+;;  2. setup gdt and A20 bit
+;;  3. read extra memory (after 512bytes)
+;;  4. enter protected mode
+;;  6. setup paging
+;;  7. setup C stack
+;;  8. setup interrupt
+;;  9. call kmain
+
 
 section .boot
     bits 16                     ; x86 real mode is 16 bit
@@ -6,7 +16,6 @@ section .boot
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
     ; boot : () -> !
 boot:
-    call bios_greet
 
     mov ax, 0x2401
     int 0x15                    ; enable A20 bit
@@ -90,19 +99,8 @@ disk:
 CODE_SEG equ gdt_code - gdt_null
 DATA_SEG equ gdt_data - gdt_null
 
-    ; bios_greet : () -> ()
-bios_greet:
-    mov si, bios_msg                ; point si to bios_msg
-    mov al, 0x0e                    ; set al to 0x0e to display character
-bios_greet_loop:
-    lodsb                           ; al = (*si)++
-    int 0x10                        ; print character
-    cmp al, 0                       ; while *al != '\0'
-    jne bios_greet_loop
-    ret
-
 msg:
-    db "[- msg from protected mode -]", 0
+    db "[- Entering OS -]", 0
 
 times 510 - ($-$$) db 0           ; pad til 510 bytes
 dw 0xaa55                       ; magic word 0x55AA, little endian for x86.
@@ -118,12 +116,11 @@ copy_tgt:
     ; boot2 : () -> ()
 boot2:
     push msg
-    call protected_mode_greet
+    call output
     jmp halt
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-    ; protected_mode_greet : () -> ()
-protected_mode_greet:               ; can't use bios anymore. use VGA here.
+output:               ; can't use bios anymore. use VGA here.
     push ebp
     mov ebp, esp
     mov esi, [esp + 8]              ; address of the message
@@ -133,22 +130,22 @@ protected_mode_greet:               ; can't use bios anymore. use VGA here.
                                     ; VGA character are represented as
                                     ; |0               |8            16
                                     ; |bg clr |fg clr  |ascii char
-protected_mode_greet_loop:
+output_loop:
     lodsb                           ; read next byte
     cmp al, 0                       ; if it's null
-    je protected_mode_greet_end     ; protect
+    je output_end                   ; protect
     or eax, 0x0100                  ; set bit 0x0100
     mov word [ebx], ax              ;
     add ebx, 2
-    jmp protected_mode_greet_loop
-protected_mode_greet_end:
+    jmp output_loop
+output_end:
     pop ebp
     ret
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-; define some data
+; define data
 bios_msg:
-    db "[- msg from bios 0x10 -]", 0
+    db "[- BIOS ok -]", 0
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
