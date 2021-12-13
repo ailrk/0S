@@ -163,6 +163,9 @@ times 1024 - ($-$$) db 0           ; pad til 510 bytes
 section .bss
 align 4
 
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; c++ starts here.
 kernel_stack_bottom: equ $
         resb 16384                 ; 16kb
 kernel_stack_top:
