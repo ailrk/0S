@@ -167,5 +167,5 @@ align 4
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; c++ starts here.
 kernel_stack_bottom: equ $
-        resb 16384                  ; 16kb
+        resb 16384                  ; 16kb for kernel call stack.
 kernel_stack_top:
