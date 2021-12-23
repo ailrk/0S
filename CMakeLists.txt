@@ -1,6 +1,9 @@
 cmake_minimum_required(VERSION 3.5)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
+# TODO 1. Add assembler.
+# TODO 2. Add python scripts
+
 # setup assembly
 set(CMAKE_NASM_LINK_EXECUTABLE "ld -o ")
 set(CAN_USE_ASSEMBLER TRUE)

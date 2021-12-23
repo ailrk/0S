@@ -1,1 +1,3 @@
-# AbaAbaOS
+# AOS
+
+A operating system.
